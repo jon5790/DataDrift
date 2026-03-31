@@ -1,0 +1,52 @@
+name: Workflow 2 - BR_EX5 to BR_EX8
+
+on:
+  workflow_run:
+    workflows: ["Workflow 1 - BR_EX1 to BR_EX4"]
+    types:
+      - completed
+  workflow_dispatch:  # Allows manual trigger
+
+jobs:
+  run-scrapers:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        folder: [BR_EX5, BR_EX6, BR_EX7, BR_EX8]
+      fail-fast: false  # Continue other jobs even if one fails
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          playwright install chromium
+          playwright install-deps chromium
+
+      - name: Run ${{ matrix.folder }}
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+        run: |
+          python -m ${{ matrix.folder }}.main
+
+      - name: Upload logs (if available)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: logs-${{ matrix.folder }}
+          path: |
+            *.log
+            logs/
+          if-no-files-found: ignore
+          retention-days: 7
