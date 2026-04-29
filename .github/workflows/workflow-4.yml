@@ -9,7 +9,7 @@ on:
 
 jobs:
   run-scrapers:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     strategy:
       matrix:
         folder: [BR_EX13, BR_EX14, BR_EX15]
